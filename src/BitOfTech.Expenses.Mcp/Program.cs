@@ -13,6 +13,8 @@ builder.Services.AddSingleton<ExpenseStore>();
 builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
-    .WithToolsFromAssembly();
+    .WithToolsFromAssembly()
+    .WithResourcesFromAssembly()
+    .WithPromptsFromAssembly();
 
 await builder.Build().RunAsync();

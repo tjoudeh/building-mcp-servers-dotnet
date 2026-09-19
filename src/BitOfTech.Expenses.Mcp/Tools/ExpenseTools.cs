@@ -10,12 +10,12 @@ namespace BitOfTech.Expenses.Mcp.Tools;
 public class ExpenseTools(ExpenseStore store)
 {
     [McpServerTool(Name = "search_expense_reports")]
-    [Description("Searches expense reports by employee name and status. Returns every matching report with its line items.")]
+    [Description("Searches expense reports by employee and by where they are in the approval workflow. Returns the matching reports with their line items.")]
     public IReadOnlyList<ExpenseReport> SearchExpenseReports(
         [Description("Part of an employee name, matched case insensitively. Omit to search across all employees.")]
         string? employeeName = null,
-        [Description("Only return reports in this status. Omit to return reports in any status.")]
-        ExpenseReportStatus? status = null)
+        [Description("Where the report sits in the approval workflow right now. Only use this when the question is about the current state. A report that was approved or rejected was also submitted at some point, so do not filter on Submitted to answer questions about what somebody has submitted.")]
+        ExpenseReportStatus? currentStatus = null)
     {
         IEnumerable<ExpenseReport> results = store.Reports;
 
@@ -29,22 +29,23 @@ public class ExpenseTools(ExpenseStore store)
             results = results.Where(r => matchingIds.Contains(r.EmployeeId));
         }
 
-        if (status is not null)
+        if (currentStatus is not null)
         {
-            results = results.Where(r => r.Status == status);
+            results = results.Where(r => r.Status == currentStatus);
         }
 
         return results.OrderByDescending(r => r.SubmittedOn).ToList();
     }
 
     [McpServerTool(Name = "get_expense_report")]
-    [Description("Gets a single expense report with its line items, by report id.")]
+    [Description("Gets one expense report with its line items, by id. Call search_expense_reports first if you do not already have an id.")]
     public ExpenseReport GetExpenseReport(
         [Description("The expense report id, for example 1001.")] int reportId)
     {
         // McpException reaches the model. Other exception types are replaced with a
         // generic message, so the model never learns what it did wrong.
         return store.Reports.FirstOrDefault(r => r.Id == reportId)
-            ?? throw new McpException($"No expense report found with id {reportId}.");
+            ?? throw new McpException(
+                $"No expense report found with id {reportId}. Call search_expense_reports to find valid ids.");
     }
 }
