@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------
+# Private authoring material. Never publish.
+# ---------------------------------------------------------------
+/posts/
+/.github/copilot-instructions.md
+
+# ---------------------------------------------------------------
+# .NET build output
+# ---------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+artifacts/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+*.nupkg
+*.snupkg
+
+# ---------------------------------------------------------------
+# IDE
+# ---------------------------------------------------------------
+.vs/
+.idea/
+
+# Keep the files a reader needs, drop local editor state.
+.vscode/*
+!.vscode/mcp.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ---------------------------------------------------------------
+# Secrets and local configuration
+# ---------------------------------------------------------------
+.env
+*.env
+secrets.json
+appsettings.*.local.json
+
+# ---------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
