@@ -63,7 +63,7 @@ public class ExpenseTools(ExpensesDbContext db)
     }
 
     [McpServerTool(Name = "create_expense_report")]
-    [Description("Creates a new expense report as a draft, together with its line items. The report is not submitted. Tell the user the new report id and ask whether they want it submitted, then call submit_expense_report.")]
+    [Description("Creates a new expense report as a draft, together with its line items. A report cannot be edited after it is created. If the user did not give a title, or gave a date without a year, ask them for it before calling this tool rather than choosing a value yourself. The report is not submitted, so tell the user the new report id and ask whether they want it submitted, then call submit_expense_report.")]
     public async Task<ExpenseReportDetail> CreateExpenseReportAsync(
         [Description("Part of the name of the employee the report belongs to. Must match exactly one employee.")]
         string employeeName,
