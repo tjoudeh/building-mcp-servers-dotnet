@@ -55,8 +55,9 @@ Prompts:
 
 1. The [.NET 10 SDK](https://dotnet.microsoft.com/download).
 2. VS Code with the GitHub Copilot extension. The free Copilot tier is enough.
-3. Docker Desktop, from Part 4 onwards, for SQL Server locally.
-4. An Azure subscription, from Part 8 onwards. Parts 1 to 7 run entirely on your machine.
+3. An Azure subscription, from Part 4 onwards, for Azure SQL on the free offer. Parts 1 to 3
+   need nothing but the SDK and VS Code. A `docker-compose.yml` is included if you would rather
+   run SQL Server locally.
 
 ## Running it
 

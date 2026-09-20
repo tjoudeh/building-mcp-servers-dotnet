@@ -1,0 +1,23 @@
+# Optional. The posts use Azure SQL on the free offer, but this runs the same
+# database engine locally if you would rather work offline.
+#
+#   docker compose up -d
+#
+# Then use this connection string:
+#   Server=localhost,1433;Database=BitOfTechExpenses;User Id=sa;Password=Your_password123;TrustServerCertificate=True
+
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: bitoftech-expenses-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_password123"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - expenses-sql:/var/opt/mssql
+
+volumes:
+  expenses-sql:
