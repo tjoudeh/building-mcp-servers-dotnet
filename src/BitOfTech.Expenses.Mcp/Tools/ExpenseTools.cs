@@ -62,6 +62,78 @@ public class ExpenseTools(ExpensesDbContext db)
                 $"No expense report found with id {reportId}. Call search_expense_reports to find valid ids.");
     }
 
+    [McpServerTool(Name = "create_expense_report")]
+    [Description("Creates a new expense report as a draft, together with its line items. The report is not submitted. Tell the user the new report id and ask whether they want it submitted, then call submit_expense_report.")]
+    public async Task<ExpenseReportDetail> CreateExpenseReportAsync(
+        [Description("Part of the name of the employee the report belongs to. Must match exactly one employee.")]
+        string employeeName,
+        [Description("A short title for the report, for example Berlin customer workshop.")]
+        string title,
+        [Description("Three letter ISO 4217 code the expenses were paid in, for example EUR.")]
+        string currency,
+        [Description("The line items on the report. At least one is required.")]
+        IReadOnlyList<NewExpenseLine> lines,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new McpException("The report needs a title. Ask the user what the expenses were for.");
+        }
+
+        if (lines is null or { Count: 0 })
+        {
+            throw new McpException("An expense report needs at least one line item. Ask the user what they are claiming for.");
+        }
+
+        if (lines.Any(line => line.Amount <= 0))
+        {
+            throw new McpException("Every line item must have an amount greater than zero.");
+        }
+
+        if (currency is null || currency.Trim().Length != 3)
+        {
+            throw new McpException("Currency must be a three letter ISO 4217 code, for example EUR.");
+        }
+
+        var matches = await db.Employees
+            .Where(e => e.Name.Contains(employeeName))
+            .Select(e => new { e.Id, e.Name })
+            .ToListAsync(cancellationToken);
+
+        if (matches.Count == 0)
+        {
+            throw new McpException($"No employee matches '{employeeName}'. Ask the user for the full name.");
+        }
+
+        if (matches.Count > 1)
+        {
+            var names = string.Join(", ", matches.Select(m => m.Name));
+            throw new McpException($"'{employeeName}' matches more than one employee: {names}. Ask the user which one they mean.");
+        }
+
+        var report = new ExpenseReport
+        {
+            EmployeeId = matches[0].Id,
+            Title = title.Trim(),
+            Currency = currency.Trim().ToUpperInvariant(),
+            Status = ExpenseReportStatus.Draft,
+            SubmittedOn = null,
+            TotalAmount = lines.Sum(line => line.Amount),
+            Lines = [.. lines.Select(line => new ExpenseLine
+            {
+                Description = line.Description.Trim(),
+                Category = line.Category.Trim(),
+                Amount = line.Amount,
+                IncurredOn = line.IncurredOn
+            })]
+        };
+
+        db.Reports.Add(report);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await db.ReportDetail(report.Id).FirstAsync(cancellationToken);
+    }
+
     [McpServerTool(Name = "submit_expense_report")]
     [Description("Submits a draft expense report for approval. Only works on a report that is still a draft, and it cannot be undone.")]
     public async Task<ExpenseReportDetail> SubmitExpenseReportAsync(
