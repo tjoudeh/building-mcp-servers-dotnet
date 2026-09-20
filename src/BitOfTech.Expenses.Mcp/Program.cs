@@ -6,7 +6,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+    Args = args,
+    // An MCP host starts us with whatever working directory it likes, so appsettings.json
+    // has to be read from the folder the binary is in rather than the current directory.
+    ContentRootPath = AppContext.BaseDirectory
+});
 
 // stdout carries the MCP protocol itself, so every log line must go to stderr.
 builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
