@@ -5,13 +5,8 @@
       "url": "https://learn.microsoft.com/api/mcp"
     },
     "bitoftech-expenses": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "${workspaceFolder}/src/BitOfTech.Expenses.Mcp"
-      ]
+      "type": "http",
+      "url": "http://localhost:5000/mcp"
     }
   }
 }
