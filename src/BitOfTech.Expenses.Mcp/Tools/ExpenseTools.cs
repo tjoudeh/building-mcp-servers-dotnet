@@ -12,11 +12,11 @@ namespace BitOfTech.Expenses.Mcp.Tools;
 public class ExpenseTools(ExpensesDbContext db)
 {
     [McpServerTool(Name = "search_expense_reports")]
-    [Description("Searches expense reports by employee and by where they are in the approval workflow. Returns a summary of each match without the line items. Call get_expense_report when you need the lines.")]
+    [Description("Searches expense reports by employee. Returns a summary of each match without the line items. The word submitted in a question is not a status filter: every report that is now Approved or Rejected was submitted earlier too. To answer what somebody submitted or filed, pass employeeName only and leave currentStatus empty. Call get_expense_report when you need the lines.")]
     public async Task<IReadOnlyList<ExpenseReportSummary>> SearchExpenseReportsAsync(
         [Description("Part of an employee name, matched case insensitively. Omit to search across all employees.")]
         string? employeeName = null,
-        [Description("Where the report sits in the approval workflow right now. Only use this when the question is about the current state. A report that was approved or rejected was also submitted at some point, so do not filter on Submitted to answer questions about what somebody has submitted.")]
+        [Description("Filters to reports sitting in this exact state right now. Omit it unless the user asked for one specific state.")]
         ExpenseReportStatus? currentStatus = null,
         CancellationToken cancellationToken = default)
     {
