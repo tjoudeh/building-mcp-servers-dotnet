@@ -1,9 +1,12 @@
 using System.ComponentModel;
+using BitOfTech.Expenses.Mcp.Auth;
 using BitOfTech.Expenses.Mcp.Contracts;
 using BitOfTech.Expenses.Mcp.Data;
 using BitOfTech.Expenses.Mcp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
 namespace BitOfTech.Expenses.Mcp.Tools;
@@ -152,6 +155,51 @@ public class ExpenseTools(ExpensesDbContext db)
 
         report.Status = ExpenseReportStatus.Submitted;
         report.SubmittedOn = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await db.ReportDetail(reportId).FirstAsync(cancellationToken);
+    }
+
+    [McpServerTool(Name = "approve_expense_report")]
+    [Authorize(Policy = EntraAuthentication.CanApprovePolicy)]
+    [Description("Approves an expense report that is waiting for approval. The approver is always the signed in user, so never ask who is approving and never pass a name. Only a report that is currently Submitted can be approved, and approval cannot be undone.")]
+    public async Task<ExpenseReportDetail> ApproveExpenseReportAsync(
+        RequestContext<CallToolRequestParams> context,
+        [Description("The id of the submitted expense report to approve.")] int reportId,
+        CancellationToken cancellationToken = default)
+    {
+        // The caller comes from the validated token, never from a tool argument. A model can be
+        // talked into passing any name you like, but it cannot mint an oid.
+        var objectId = context.User.GetObjectId()
+            ?? throw new McpException("The signed in user has no object id, so the approver cannot be identified.");
+
+        var approver = await db.Employees
+            .Where(e => e.EntraObjectId == objectId)
+            .Select(e => new { e.Id, e.Name })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new McpException(
+                "The signed in user is not linked to an employee record, so they cannot approve reports.");
+
+        var report = await db.Reports.FirstOrDefaultAsync(r => r.Id == reportId, cancellationToken)
+            ?? throw new McpException(
+                $"No expense report found with id {reportId}. Call search_expense_reports to find valid ids.");
+
+        if (report.EmployeeId == approver.Id)
+        {
+            throw new McpException(
+                $"Report {reportId} belongs to {approver.Name}, who is the signed in user. Nobody can approve their own expense report.");
+        }
+
+        if (report.Status is not ExpenseReportStatus.Submitted)
+        {
+            throw new McpException(
+                $"Report {reportId} is {report.Status}, and only a Submitted report can be approved.");
+        }
+
+        report.Status = ExpenseReportStatus.Approved;
+        report.ApprovedByEmployeeId = approver.Id;
+        report.ApprovedOn = DateOnly.FromDateTime(DateTime.UtcNow);
 
         await db.SaveChangesAsync(cancellationToken);
 

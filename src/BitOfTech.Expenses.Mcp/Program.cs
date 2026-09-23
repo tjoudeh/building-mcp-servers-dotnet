@@ -1,4 +1,5 @@
-﻿using BitOfTech.Expenses.Mcp.Data;
+﻿using BitOfTech.Expenses.Mcp.Auth;
+using BitOfTech.Expenses.Mcp.Data;
 using BitOfTech.Expenses.Mcp.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,15 +20,22 @@ builder.Services.AddHttpClient<FrankfurterClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+builder.Services.AddEntraAuthentication(builder.Configuration);
+
 builder.Services
     .AddMcpServer()
     .WithHttpTransport()
     .WithToolsFromAssembly()
     .WithResourcesFromAssembly()
-    .WithPromptsFromAssembly();
+    .WithPromptsFromAssembly()
+    // Drops any tool, resource or prompt the caller is not allowed to use before the list is sent.
+    .AddAuthorizationFilters();
 
 var app = builder.Build();
 
-app.MapMcp("/mcp");
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapMcp("/mcp").RequireAuthorization();
 
 app.Run();

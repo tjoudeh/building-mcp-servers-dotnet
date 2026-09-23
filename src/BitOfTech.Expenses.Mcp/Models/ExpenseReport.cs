@@ -25,5 +25,9 @@ public class ExpenseReport
 
     public DateOnly? SubmittedOn { get; set; }
 
+    public int? ApprovedByEmployeeId { get; set; }
+
+    public DateOnly? ApprovedOn { get; set; }
+
     public List<ExpenseLine> Lines { get; set; } = [];
 }
