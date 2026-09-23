@@ -1,12 +1,8 @@
 {
   "servers": {
-    "microsoft-learn": {
-      "type": "http",
-      "url": "https://learn.microsoft.com/api/mcp"
-    },
     "bitoftech-expenses": {
       "type": "http",
-      "url": "http://localhost:5000/mcp"
+      "url": "https://localhost:7040/mcp"
     }
   }
 }

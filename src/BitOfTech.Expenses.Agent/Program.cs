@@ -1,4 +1,5 @@
 using Azure.AI.OpenAI;
+using Azure.Core;
 using Azure.Identity;
 using BitOfTech.Expenses.Agent;
 using Microsoft.Agents.AI;
@@ -18,10 +19,27 @@ var mcpEndpoint = configuration["Mcp:Endpoint"]!;
 var foundryEndpoint = configuration["Foundry:Endpoint"]!;
 var deploymentName = configuration["Foundry:Deployment"]!;
 
+// The SDK can run the whole OAuth flow itself, but not against Entra: Entra's v2.0 metadata
+// omits code_challenge_methods_supported, and an MCP client must refuse a server that does not
+// advertise PKCE. So we sign in ourselves and hand the transport a bearer token.
+var credential = new InteractiveBrowserCredential(new InteractiveBrowserCredentialOptions
+{
+    TenantId = configuration["Entra:TenantId"],
+    ClientId = configuration["Entra:ClientId"],
+    RedirectUri = new Uri(configuration["Entra:RedirectUri"]!)
+});
+
+var accessToken = await credential.GetTokenAsync(
+    new TokenRequestContext([configuration["Entra:Scope"]!]));
+
 await using var transport = new HttpClientTransport(new HttpClientTransportOptions
 {
     Endpoint = new Uri(mcpEndpoint),
-    Name = "bitoftech-expenses"
+    Name = "bitoftech-expenses",
+    AdditionalHeaders = new Dictionary<string, string>
+    {
+        ["Authorization"] = $"Bearer {accessToken.Token}"
+    }
 });
 
 await using var mcpClient = await McpClient.CreateAsync(transport);

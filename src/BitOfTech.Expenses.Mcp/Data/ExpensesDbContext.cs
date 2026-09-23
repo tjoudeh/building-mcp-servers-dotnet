@@ -17,6 +17,8 @@ public class ExpensesDbContext(DbContextOptions<ExpensesDbContext> options) : Db
         {
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.Property(e => e.Email).HasMaxLength(320).IsRequired();
+            entity.Property(e => e.EntraObjectId).HasMaxLength(36);
+            entity.HasIndex(e => e.EntraObjectId).IsUnique().HasFilter("[EntraObjectId] IS NOT NULL");
         });
 
         modelBuilder.Entity<ExpenseReport>(entity =>
@@ -48,7 +50,8 @@ public class ExpensesDbContext(DbContextOptions<ExpensesDbContext> options) : Db
         modelBuilder.Entity<Employee>().HasData(
             new Employee { Id = 1, Name = "Sara Haddad", Email = "sara.haddad@bitoftech.net" },
             new Employee { Id = 2, Name = "Omar Nasser", Email = "omar.nasser@bitoftech.net" },
-            new Employee { Id = 3, Name = "Lina Farah", Email = "lina.farah@bitoftech.net" });
+            new Employee { Id = 3, Name = "Lina Farah", Email = "lina.farah@bitoftech.net" },
+            new Employee { Id = 4, Name = "Taiseer Joudeh", Email = "taiseer.joudeh@bitoftech.net" });
 
         modelBuilder.Entity<ExpenseReport>().HasData(
             new { Id = 1001, EmployeeId = 1, Title = "Berlin customer workshop", Status = ExpenseReportStatus.Submitted, Currency = "EUR", TotalAmount = 842.50m, SubmittedOn = (DateOnly?)new DateOnly(2026, 9, 2) },
