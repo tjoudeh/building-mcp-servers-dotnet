@@ -1,6 +1,7 @@
 ﻿using BitOfTech.Expenses.Mcp.Auth;
 using BitOfTech.Expenses.Mcp.Data;
 using BitOfTech.Expenses.Mcp.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -11,6 +12,16 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = AppContext.BaseDirectory
 });
 
+// Container Apps terminates TLS at its ingress and forwards over plain HTTP. Without this the
+// server builds http:// URLs, and the 401 would point MCP clients at an address Entra will not
+// issue tokens for. The known network lists are cleared because ingress is the only route in.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddDbContext<ExpensesDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ExpensesDb")));
 
@@ -19,6 +30,8 @@ builder.Services.AddHttpClient<FrankfurterClient>(client =>
     client.BaseAddress = new Uri("https://api.frankfurter.dev/");
     client.Timeout = TimeSpan.FromSeconds(10);
 });
+
+builder.Services.AddSingleton<EmailSender>();
 
 builder.Services.AddEntraAuthentication(builder.Configuration);
 
@@ -32,6 +45,9 @@ builder.Services
     .AddAuthorizationFilters();
 
 var app = builder.Build();
+
+// Must run before anything that reads the scheme, which includes the MCP challenge handler.
+app.UseForwardedHeaders();
 
 app.UseAuthentication();
 app.UseAuthorization();

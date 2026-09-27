@@ -2,7 +2,8 @@
   "servers": {
     "bitoftech-expenses": {
       "type": "http",
-      "url": "https://localhost:7040/mcp"
+      "url": "https://ca-bitoftech-expenses-mcp.kindsea-d84c8163.westeurope.azurecontainerapps.io/mcp",
+      "oauth": { "clientId": "f1c483e7-e0cd-4600-b70c-45b8d338cb8f" }
     }
   }
 }

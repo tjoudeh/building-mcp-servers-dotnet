@@ -1,0 +1,17 @@
+# Everything here is uploaded to ACR by "az acr build", so keep the context small and private
+# material out of it.
+.git/
+.github/
+.vscode/
+posts/
+entra-setup/
+
+**/bin/
+**/obj/
+artifacts/
+
+Dockerfile
+.dockerignore
+docker-compose.yml
+README.md
+LICENSE

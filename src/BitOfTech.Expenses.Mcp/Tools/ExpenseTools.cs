@@ -163,7 +163,7 @@ public class ExpenseTools(ExpensesDbContext db)
 
     [McpServerTool(Name = "approve_expense_report")]
     [Authorize(Policy = EntraAuthentication.CanApprovePolicy)]
-    [Description("Approves an expense report that is waiting for approval. The approver is always the signed in user, so never ask who is approving and never pass a name. Only a report that is currently Submitted can be approved, and approval cannot be undone.")]
+    [Description("Approves an expense report that is waiting for approval. The approver is always the signed in user, so never ask who is approving and never pass a name. Only a report that is currently Submitted can be approved, and approval cannot be undone. After approving, ask the user whether the employee should be emailed about it, and call notify_employee only if they say yes. If they already asked for the employee to be told, call notify_employee without asking again.")]
     public async Task<ExpenseReportDetail> ApproveExpenseReportAsync(
         RequestContext<CallToolRequestParams> context,
         [Description("The id of the submitted expense report to approve.")] int reportId,
