@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/BitOfTech.Expenses.Agent/BitOfTech.Expenses.Agent.csproj" />
+    <Project Path="src/BitOfTech.Expenses.FoundryAgent/BitOfTech.Expenses.FoundryAgent.csproj" />
     <Project Path="src/BitOfTech.Expenses.Mcp/BitOfTech.Expenses.Mcp.csproj" />
   </Folder>
 </Solution>
