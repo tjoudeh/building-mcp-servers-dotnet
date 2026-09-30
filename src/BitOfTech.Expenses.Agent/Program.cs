@@ -65,16 +65,45 @@ Console.WriteLine();
 
 if (useAgentFramework)
 {
-    AIAgent agent = chatClient.AsAIAgent(
-        instructions: AgentInstructions.System,
-        name: "expenses",
-        tools: [.. tools]);
+    // Tools that change something. Everything else runs without asking.
+    string[] needsApproval =
+    [
+        "create_expense_report",
+        "submit_expense_report",
+        "approve_expense_report",
+        "notify_employee"
+    ];
+
+    List<AITool> agentTools =
+    [
+        .. tools.Select(tool => needsApproval.Contains(tool.Name)
+            ? new ApprovalRequiredAIFunction(tool)
+            : (AITool)tool)
+    ];
+
+    AIAgent agent = chatClient
+        .AsAIAgent(
+            instructions: AgentInstructions.System,
+            name: "expenses",
+            tools: agentTools)
+        .AsBuilder()
+        .UseToolApproval(new ToolApprovalAgentOptions())
+        .Build();
 
     var session = await agent.CreateSessionAsync();
 
     while (ReadInput() is { } input)
     {
         var response = await agent.RunAsync(new ChatMessage(ChatRole.User, input), session);
+
+        // Answering is itself a turn, and one answer can surface the next request, so this
+        // has to loop rather than check once.
+        while (PendingApprovals(response) is { Count: > 0 } requests)
+        {
+            response = await agent.RunAsync(
+                new ChatMessage(ChatRole.User, AnswerApprovals(requests)), session);
+        }
+
         Console.WriteLine(response.Text);
         Console.WriteLine();
     }
@@ -95,4 +124,39 @@ static string? ReadInput()
     Console.Write("> ");
     var line = Console.ReadLine();
     return string.IsNullOrWhiteSpace(line) ? null : line;
+}
+
+static List<ToolApprovalRequestContent> PendingApprovals(AgentResponse response) =>
+    [.. response.Messages.SelectMany(m => m.Contents).OfType<ToolApprovalRequestContent>()];
+
+static List<AIContent> AnswerApprovals(List<ToolApprovalRequestContent> requests)
+{
+    List<AIContent> answers = [];
+
+    foreach (var request in requests)
+    {
+        var call = request.ToolCall as FunctionCallContent;
+
+        Console.WriteLine($"  {call?.Name} wants to run");
+
+        if (call?.Arguments is { } arguments)
+        {
+            foreach (var (name, value) in arguments)
+            {
+                Console.WriteLine($"    {name}: {value}");
+            }
+        }
+
+        Console.Write("  allow it? (y)es, (n)o, (a)lways for this tool ");
+
+        answers.Add(Console.ReadLine()?.Trim().ToLowerInvariant() switch
+        {
+            // Records a standing rule on the session, so the same tool stops asking.
+            "a" => request.CreateAlwaysApproveToolResponse(),
+            "y" => request.CreateResponse(approved: true),
+            _ => request.CreateResponse(approved: false, "the user declined")
+        });
+    }
+
+    return answers;
 }

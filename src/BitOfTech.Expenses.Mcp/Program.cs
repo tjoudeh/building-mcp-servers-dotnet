@@ -1,4 +1,5 @@
-﻿using BitOfTech.Expenses.Mcp.Auth;
+﻿using Azure.Monitor.OpenTelemetry.AspNetCore;
+using BitOfTech.Expenses.Mcp.Auth;
 using BitOfTech.Expenses.Mcp.Data;
 using BitOfTech.Expenses.Mcp.Services;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -24,6 +25,19 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddDbContext<ExpensesDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ExpensesDb")));
+
+// The MCP SDK already emits a span per JSON-RPC message on this source, so there is nothing
+// to instrument by hand. Skipped when the connection string is absent, which is how the
+// server runs locally against docker-compose.
+var appInsights = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+
+if (!string.IsNullOrWhiteSpace(appInsights))
+{
+    builder.Services.AddOpenTelemetry()
+        .WithTracing(tracing => tracing.AddSource("Experimental.ModelContextProtocol"))
+        .WithMetrics(metrics => metrics.AddMeter("Experimental.ModelContextProtocol"))
+        .UseAzureMonitor(options => options.ConnectionString = appInsights);
+}
 
 builder.Services.AddHttpClient<FrankfurterClient>(client =>
 {
