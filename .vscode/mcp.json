@@ -3,7 +3,7 @@
     "bitoftech-expenses": {
       "type": "http",
       "url": "https://ca-bitoftech-expenses-mcp.kindsea-d84c8163.westeurope.azurecontainerapps.io/mcp",
-      "oauth": { "clientId": "f1c483e7-e0cd-4600-b70c-45b8d338cb8f" }
+      "oauth": { "clientId": "419a0909-901f-420a-a235-e4df228cc1d6" }
     }
   }
 }
